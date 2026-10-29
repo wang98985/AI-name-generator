@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI 起名大师 · 赐子千金不如赐子好名</title>
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: "PingFang SC", "Microsoft YaHei", "Noto Serif SC", serif;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #1a1440 0%, #3b1d5a 50%, #6b2d5c 100%);
+      color: #f5f0e8;
+      padding: 40px 16px 80px;
+    }
+    .container { max-width: 880px; margin: 0 auto; }
+
+    header { text-align: center; margin-bottom: 36px; }
+    header h1 {
+      font-size: 42px; letter-spacing: 12px; font-weight: 700;
+      background: linear-gradient(90deg, #f7d794, #f3a683, #f7d794);
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    header p { margin-top: 10px; color: #cbb8d9; letter-spacing: 4px; font-size: 14px; }
+
+    .card {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(247, 215, 148, 0.25);
+      border-radius: 16px;
+      padding: 28px;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+    }
+
+    .mode-switch { display: flex; gap: 12px; margin-bottom: 22px; }
+    .mode-btn {
+      flex: 1; padding: 14px; text-align: center; cursor: pointer;
+      border-radius: 12px; border: 1px solid rgba(247, 215, 148, 0.3);
+      background: rgba(255,255,255,0.04); color: #cbb8d9;
+      font-size: 16px; letter-spacing: 3px; transition: all .25s;
+    }
+    .mode-btn.active {
+      background: linear-gradient(90deg, #f7d794, #f3a683);
+      color: #3b1d5a; font-weight: 700; border-color: transparent;
+      box-shadow: 0 6px 18px rgba(247, 215, 148, 0.35);
+    }
+
+    .form-row { display: flex; gap: 14px; margin-bottom: 14px; flex-wrap: wrap; }
+    .form-item { flex: 1; min-width: 140px; }
+    label { display: block; font-size: 13px; color: #cbb8d9; margin-bottom: 6px; letter-spacing: 2px; }
+    input, select, textarea {
+      width: 100%; padding: 12px 14px; border-radius: 10px;
+      border: 1px solid rgba(247, 215, 148, 0.3);
+      background: rgba(0, 0, 0, 0.25); color: #f5f0e8; font-size: 15px;
+      outline: none; transition: border .2s;
+    }
+    input:focus, select:focus, textarea:focus { border-color: #f7d794; }
+    input::placeholder, textarea::placeholder { color: #8d7ba3; }
+    textarea { resize: vertical; min-height: 74px; }
+    select option { color: #333; }
+    #birthFields { display: none; }
+
+    #submitBtn {
+      width: 100%; padding: 15px; margin-top: 6px; border: none; border-radius: 12px;
+      background: linear-gradient(90deg, #f7d794, #f3a683);
+      color: #3b1d5a; font-size: 18px; font-weight: 700; letter-spacing: 8px;
+      cursor: pointer; transition: transform .15s, box-shadow .2s;
+    }
+    #submitBtn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(247, 215, 148, 0.4); }
+    #submitBtn:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+
+    #loading { display: none; text-align: center; padding: 30px; color: #f7d794; letter-spacing: 4px; }
+    .spinner {
+      display: inline-block; width: 26px; height: 26px; margin-right: 10px;
+      border: 3px solid rgba(247,215,148,.3); border-top-color: #f7d794;
+      border-radius: 50%; animation: spin 1s linear infinite; vertical-align: -6px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #error { display: none; margin-top: 16px; padding: 12px 16px; border-radius: 10px;
+      background: rgba(231, 76, 60, .15); border: 1px solid rgba(231, 76, 60, .5); color: #ffb3a7; }
+
+    #result { display: none; margin-top: 28px; }
+    #baziBox {
+      display: none; margin-bottom: 18px; padding: 16px 18px; border-radius: 12px;
+      background: rgba(247, 215, 148, 0.08); border: 1px dashed rgba(247, 215, 148, 0.4);
+      color: #f7d794; line-height: 1.8; font-size: 14px;
+    }
+    .name-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+    .name-card {
+      background: linear-gradient(160deg, rgba(255,255,255,.10), rgba(255,255,255,.03));
+      border: 1px solid rgba(247, 215, 148, 0.35); border-radius: 14px;
+      padding: 24px 20px; text-align: center; transition: transform .2s;
+    }
+    .name-card:hover { transform: translateY(-4px); }
+    .name-card .name { font-size: 34px; font-weight: 700; color: #f7d794; letter-spacing: 6px; }
+    .name-card .pinyin { margin-top: 6px; color: #cbb8d9; font-size: 13px; letter-spacing: 2px; }
+    .name-card .meaning { margin-top: 14px; color: #e8e0f0; font-size: 14px; line-height: 1.9; text-align: left; }
+    .model-tag { margin-top: 16px; text-align: right; font-size: 12px; color: #8d7ba3; }
+
+    #historySection { margin-top: 44px; }
+    #historySection h2 { font-size: 20px; letter-spacing: 6px; color: #f7d794; margin-bottom: 16px; }
+    .history-item {
+      padding: 14px 18px; margin-bottom: 10px; border-radius: 12px;
+      background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);
+      cursor: pointer; transition: background .2s;
+    }
+    .history-item:hover { background: rgba(255,255,255,.10); }
+    .history-item .h-top { display: flex; justify-content: space-between; font-size: 13px; color: #cbb8d9; }
+    .history-item .h-names { margin-top: 6px; font-size: 16px; color: #f7d794; letter-spacing: 2px; }
+    .history-item .h-detail { display: none; margin-top: 10px; font-size: 13px; color: #d9cfe8; line-height: 1.9;
+      border-top: 1px dashed rgba(255,255,255,.15); padding-top: 10px; }
+    .empty-history { color: #8d7ba3; font-size: 14px; text-align: center; padding: 20px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>AI 起名大师</h1>
+      <p>赐子千金 · 不如教子一艺 · 不如赐子好名</p>
+    </header>
+
+    <div class="card">
+      <div class="mode-switch">
+        <div class="mode-btn active" data-mode="normal">经典起名</div>
+        <div class="mode-btn" data-mode="bazi">生辰八字起名</div>
+      </div>
+
+      <form id="nameForm">
+        <div class="form-row">
+          <div class="form-item">
+            <label>姓氏 *</label>
+            <input type="text" id="surname" placeholder="如：李" maxlength="4" required />
+          </div>
+          <div class="form-item">
+            <label>性别</label>
+            <select id="gender">
+              <option value="男孩">男孩</option>
+              <option value="女孩">女孩</option>
+              <option value="不限">不限</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="birthFields">
+          <div class="form-row">
+            <div class="form-item">
+              <label>出生日期</label>
+              <input type="date" id="birthDate" />
+            </div>
+            <div class="form-item">
+              <label>出生时辰</label>
+              <input type="time" id="birthTime" />
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-item">
+            <label>起名需求 / 期望</label>
+            <textarea id="requirement" placeholder="如：希望名字出自诗词典故、寓意聪慧健康；避免生僻字……"></textarea>
+          </div>
+        </div>
+
+        <button type="submit" id="submitBtn">开始起名</button>
+      </form>
+
+      <div id="error"></div>
+      <div id="loading"><span class="spinner"></span>大师正在推敲好名，请稍候…</div>
+
+      <div id="result">
+        <div id="baziBox"></div>
+        <div class="name-grid" id="nameGrid"></div>
+        <div class="model-tag" id="modelTag"></div>
+      </div>
+    </div>
+
+    <div id="historySection">
+      <h2>起名历史</h2>
+      <div id="historyList"><div class="empty-history">加载中…</div></div>
+    </div>
+  </div>
+
+  <script>
+    $(function () {
+      let mode = 'normal';
+
+      // 切换起名模式
+      $('.mode-btn').on('click', function () {
+        $('.mode-btn').removeClass('active');
+        $(this).addClass('active');
+        mode = $(this).data('mode');
+        $('#birthFields').slideToggle(200, mode === 'bazi');
+      });
+
+      // 提交起名
+      $('#nameForm').on('submit', function (e) {
+        e.preventDefault();
+        $('#error').hide();
+        $('#result').hide();
+        $('#loading').show();
+        $('#submitBtn').prop('disabled', true);
+
+        $.ajax({
+          url: '/api/name',
+          method: 'POST',
+          contentType: 'application/json',
+          data: JSON.stringify({
+            surname: $('#surname').val().trim(),
+            gender: $('#gender').val(),
+            mode: mode,
+            requirement: $('#requirement').val().trim(),
+            birthDate: $('#birthDate').val(),
+            birthTime: $('#birthTime').val()
+          })
+        }).done(function (res) {
+          renderResult(res);
+          loadHistory();
+        }).fail(function (xhr) {
+          const msg = xhr.responseJSON && xhr.responseJSON.error ? xhr.responseJSON.error : '起名失败，请稍后重试';
+          $('#error').text(msg).fadeIn();
+        }).always(function () {
+          $('#loading').hide();
+          $('#submitBtn').prop('disabled', false);
+        });
+      });
+
+      function renderResult(res) {
+        if (res.bazi) {
+          $('#baziBox').html('<b>八字五行简析：</b>' + res.bazi).show();
+        } else {
+          $('#baziBox').hide();
+        }
+        const $grid = $('#nameGrid').empty();
+        res.names.forEach(function (n) {
+          $grid.append(
+            $('<div class="name-card"></div>').append(
+              $('<div class="name"></div>').text(n.name),
+              $('<div class="pinyin"></div>').text(n.pinyin),
+              $('<div class="meaning"></div>').text(n.meaning)
+            )
+          );
+        });
+        $('#modelTag').text('生成模型：' + res.model + (res.saved ? ' · 已保存' : ' · 未保存'));
+        $('#result').fadeIn(300);
+        $('html, body').animate({ scrollTop: $('#result').offset().top - 40 }, 400);
+      }
+
+      // 加载历史记录
+      function loadHistory() {
+        $.getJSON('/api/name').done(function (res) {
+          const list = res.history || [];
+          const $list = $('#historyList').empty();
+          if (!list.length) {
+            $list.html('<div class="empty-history">暂无起名历史</div>');
+            return;
+          }
+          list.forEach(function (item) {
+            const names = (item.names || []).map(function (n) { return n.name; }).join(' · ');
+            const time = new Date(item.created_at).toLocaleString('zh-CN');
+            const modeText = item.mode === 'bazi' ? '八字' : '经典';
+            const detail = (item.names || []).map(function (n) {
+              return $('<div></div>').text(n.name + '（' + (n.pinyin || '') + '）：' + (n.meaning || ''));
+            });
+            const $item = $('<div class="history-item"></div>').append(
+              $('<div class="h-top"></div>').append(
+                $('<span></span>').text(item.surname + ' 氏 · ' + (item.gender || '') + ' · ' + modeText + ' · ' + (item.model || '')),
+                $('<span></span>').text(time)
+              ),
+              $('<div class="h-names"></div>').text(names),
+              $('<div class="h-detail"></div>').append(detail)
+            );
+            $item.on('click', function () { $(this).find('.h-detail').slideToggle(150); });
+            $list.append($item);
+          });
+        }).fail(function () {
+          $('#historyList').html('<div class="empty-history">历史记录加载失败</div>');
+        });
+      }
+
+      loadHistory();
+    });
+  </script>
+</body>
+</html>

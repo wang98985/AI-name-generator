@@ -1,0 +1,9 @@
+{
+  "name": "ai-name-generator",
+  "version": "1.0.0",
+  "description": "AI 起名网页（普通起名 + 生辰八字起名），Vercel Serverless + Supabase",
+  "type": "module",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.4"
+  }
+}

@@ -191,7 +191,11 @@
         $('.mode-btn').removeClass('active');
         $(this).addClass('active');
         mode = $(this).data('mode');
-        $('#birthFields').slideToggle(200, mode === 'bazi');
+        if (mode === 'bazi') {
+          $('#birthFields').slideDown(200);
+        } else {
+          $('#birthFields').slideUp(200);
+        }
       });
 
       // 提交起名
@@ -228,7 +232,7 @@
 
       function renderResult(res) {
         if (res.bazi) {
-          $('#baziBox').html('<b>八字五行简析：</b>' + res.bazi).show();
+          $('#baziBox').empty().append($('<b></b>').text('八字五行简析：'), $('<span></span>').text(res.bazi)).show();
         } else {
           $('#baziBox').hide();
         }
